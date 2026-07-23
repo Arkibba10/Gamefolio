@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { BarChart3, Bookmark, ChevronDown, Clock3, Compass, ExternalLink, Flame, Heart, Home, Library, Menu, Play, Radio, Search, Settings, Shield, Shuffle, Sparkles, Star, Trophy, UserRound, X, Youtube } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type Game = {
   id: number; title: string; year: number; studio: string; genre: string; platform: string; rating: number; hours: number; progress: number; status: string; cover: string; accent: string; description: string; tags: string[]
@@ -136,6 +136,20 @@ function App() {
   const [hovered, setHovered] = useState<number | null>(null)
   const [menu, setMenu] = useState(false)
   const [liked, setLiked] = useState<number[]>([1259420, 2651280, 3764200])
+  const [muted, setMuted] = useState(true)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const toggleMusic = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (muted) {
+      audio.muted = false
+      audio.play().catch(() => {})
+    } else {
+      audio.muted = true
+    }
+    setMuted(!muted)
+  }
 
   const filtered = useMemo(() => {
     let result = games.filter(g => `${g.title} ${g.genre} ${g.studio} ${g.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase()))
@@ -157,6 +171,16 @@ function App() {
     const timer = window.setTimeout(() => setLoading(false), 4800)
     return () => window.clearTimeout(timer)
   }, [])
+  useEffect(() => {
+    if (!menu) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenu(false) }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [menu])
   useEffect(() => {
     const move = (event: PointerEvent) => {
       document.documentElement.style.setProperty('--mx', `${event.clientX}px`)
@@ -199,18 +223,26 @@ function App() {
       </motion.div>}</AnimatePresence>
       <div className="noise" />
       <div className="cursor-aura"/><div className="ambient-orb orb-one"/><div className="ambient-orb orb-two"/>
+
+      <audio ref={audioRef} src="/archive-fm.mp3" loop autoPlay muted={muted} />
+      <button className={muted ? 'music-toggle' : 'music-toggle playing'} onClick={toggleMusic} aria-label={muted ? 'Play background music' : 'Mute background music'}>
+        <span className="music-disc"/>
+        <span className="music-bars"><i/><i/><i/></span>
+        <small>{muted ? 'MUSIC OFF' : 'ARCHIVE FM'}</small>
+      </button>
+      {menu && <button className="sidebar-backdrop" aria-label="Close menu" onClick={() => setMenu(false)} />}
       <aside className={menu ? 'sidebar open' : 'sidebar'}>
-        <button className="mobile-close" onClick={() => setMenu(false)}><X /></button>
+        <button className="mobile-close" aria-label="Close menu" onClick={() => setMenu(false)}><X /></button>
         <div className="brand"><img src="/arkive-logo.svg" alt="Arkive logo"/><div><span>ARKIVE</span><small>WORLDS I’VE LIVED</small></div></div>
         <div className="nav-caption">MD ARKIVE’S VAULT</div>
         <nav>{nav.map(({label, icon: Icon, accent, note}) => <button key={label} style={{'--nav-accent': accent} as React.CSSProperties} className={active === label ? 'nav-item active' : 'nav-item'} onClick={() => {setActive(label); setGenre('All genres'); setMenu(false)}}><span className="nav-icon"><Icon size={16}/></span><span className="nav-copy"><strong>{label}</strong><small>{note}</small></span>{label==='Favorites' && <em>{liked.length}</em>}</button>)}</nav>
         <div className="nav-caption collections-title">COLLECTIONS</div>
-        <div className="collections"><button onClick={() => setGenre('Currently Playing')}><i className="dot lime"/>Currently playing <b>3</b></button><button onClick={() => setGenre('Completed')}><i className="dot purple"/>Completed <b>{completed}</b></button><button onClick={() => setGenre('Replay List')}><i className="dot orange"/>Replay list <b>5</b></button><button onClick={() => setGenre('Hidden Gems')}><i className="dot blue"/>Hidden gems <b>1</b></button></div>
-        <button className="profile" onClick={()=>setActive('My profile')}><div className="avatar">MA</div><div><strong>Md Arkive</strong><small>Open-world wanderer</small></div><Settings size={17}/></button>
+        <div className="collections"><button onClick={() => { setGenre('Currently Playing'); setMenu(false) }}><i className="dot lime"/>Currently playing <b>3</b></button><button onClick={() => { setGenre('Completed'); setMenu(false) }}><i className="dot purple"/>Completed <b>{completed}</b></button><button onClick={() => { setGenre('Replay List'); setMenu(false) }}><i className="dot orange"/>Replay list <b>5</b></button><button onClick={() => { setGenre('Hidden Gems'); setMenu(false) }}><i className="dot blue"/>Hidden gems <b>1</b></button></div>
+        <button className="profile" onClick={() => { setActive('My profile'); setMenu(false) }}><div className="avatar">MA</div><div><strong>Md Arkive</strong><small>Open-world wanderer</small></div><Settings size={17}/></button>
       </aside>
 
       <main>
-        <header><button className="menu-btn" onClick={() => setMenu(true)}><Menu/></button><div className="crumb"><span>ARKIVE</span><b>/</b><strong>{active.toUpperCase()}</strong></div><div className="header-actions"><div className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search Arkive’s vault..."/><kbd>⌘ K</kbd></div><button className="icon-btn"><Trophy size={18}/></button><button className="surprise" onClick={surprise}><Shuffle size={16}/> Surprise me</button></div></header>
+        <header><button className="menu-btn" aria-label="Open menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu/></button><div className="crumb"><span>ARKIVE</span><b>/</b><strong>{active.toUpperCase()}</strong></div><div className="header-actions"><div className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search Arkive’s vault..."/><kbd>⌘ K</kbd></div><button className="icon-btn"><Trophy size={18}/></button><button className="surprise" onClick={surprise}><Shuffle size={16}/> Surprise me</button></div></header>
 
         <div className="content">
           <AnimatePresence mode="wait">
@@ -219,17 +251,25 @@ function App() {
               <div><span>{currentPage.kicker}</span><h1>{currentPage.title}</h1><p>{currentPage.text}</p></div><div className="world-core"><i/><i/><i/><div className="core-cube"><b/><b/><b/><b/><b/><b/></div></div><div className="page-glyph">{active === 'Favorites' ? <Heart/> : active === 'Statistics' ? <BarChart3/> : active === 'Timeline' ? <Clock3/> : active === 'My profile' ? <UserRound/> : active === 'Online games' ? <Radio/> : active === 'Wishlist' ? <Bookmark/> : active === 'All games' ? <Library/> : <Compass/>}</div>
             </section>
 
-            {active === 'Home' && <><section className="hero" style={{'--accent': hero.accent} as React.CSSProperties}>
-              <div className="hero-backdrop" style={{backgroundImage:`url(${hero.cover})`}}/><div className="hero-fade"/>
-              <div className="eyebrow"><Sparkles size={13}/> ARCHIVE FEATURE · MASTERPIECE</div>
-              <h1>UNCHARTED<br/><i>FOUR</i></h1>
-              <p>{hero.description}</p>
-              <div className="hero-meta"><span><Star size={15} fill="currentColor"/> {hero.rating}</span><span>{hero.year}</span><span>{hero.hours} HOURS</span><span>{hero.status.toUpperCase()}</span></div>
-              <div className="hero-buttons"><button className="primary" onClick={()=>setSelected(hero)}><Play size={17} fill="currentColor"/> Explore game</button><button className="round" onClick={()=>setLiked(l=>l.includes(hero.id)?l.filter(x=>x!==hero.id):[...l,hero.id])}><Heart size={18} fill={liked.includes(hero.id)?'currentColor':'none'}/></button></div>
-              <div className="hero-index"><strong>01</strong><span/><small>{games.length}</small></div>
+            {active === 'Home' && <><section className="landing-hero" style={{'--accent': hero.accent} as React.CSSProperties}>
+              <div className="landing-hero-backdrop" style={{backgroundImage:`url(${hero.cover})`}}/><div className="landing-hero-fade"/>
+              <div className="landing-hero-content">
+                <div className="eyebrow"><Sparkles size={13}/> MD ARKIVE'S PERSONAL ARCHIVE</div>
+                <h1>EVERY WORLD<br/><i>I'VE LIVED IN</i></h1>
+                <p>{games.length} games catalogued, {totalHours.toLocaleString()} hours logged, {completed} full journeys completed — this is where every playthrough gets remembered.</p>
+                <div className="landing-hero-actions">
+                  <button className="primary" onClick={()=>document.getElementById('library-start')?.scrollIntoView({behavior:'smooth'})}><Library size={16}/> Enter the archive</button>
+                  <button className="ghost" onClick={()=>setSelected(hero)}><Play size={15} fill="currentColor"/> Featured: {hero.title}</button>
+                </div>
+              </div>
+              <button className="landing-feature-card" onClick={()=>setSelected(hero)}>
+                <GameCover game={hero}/>
+                <div><small>ARCHIVE PICK</small><strong>{hero.title}</strong><span><Star size={11} fill="currentColor"/> {hero.rating}</span></div>
+              </button>
+              <div className="landing-hero-scroll"><span/>SCROLL</div>
             </section>
 
-            <section className="stats-strip"><div><small>GAMES LOGGED</small><strong>{games.length}</strong><em>Your full collection</em></div><div><small>COMPLETED</small><strong>{completed}</strong><em>{Math.round(completed / games.length * 100)}% completion</em></div><div><small>TIME PLAYED</small><strong>{totalHours.toLocaleString()}<sup>h</sup></strong><em>Across PC & PlayStation</em></div><div><small>AVG. RATING</small><strong>{averageRating.toFixed(1)}</strong><em>A legendary library</em></div><div className="genre-stat"><small>FAVORITE GENRE</small><strong>ADVENTURE</strong><em>Stories come first</em></div></section>
+            <section className="stats-strip" id="library-start"><div><small>GAMES LOGGED</small><strong>{games.length}</strong><em>Your full collection</em></div><div><small>COMPLETED</small><strong>{completed}</strong><em>{Math.round(completed / games.length * 100)}% completion</em></div><div><small>TIME PLAYED</small><strong>{totalHours.toLocaleString()}<sup>h</sup></strong><em>Across PC & PlayStation</em></div><div><small>AVG. RATING</small><strong>{averageRating.toFixed(1)}</strong><em>A legendary library</em></div><div className="genre-stat"><small>FAVORITE GENRE</small><strong>ADVENTURE</strong><em>Stories come first</em></div></section>
 
             <section className="spotlight"><div className="section-label"><span><Flame size={14}/> ARKIVE’S TOP THREE</span><h2>Games that define me</h2></div><div className="spotlight-grid">{spotlight.map((game,index)=><motion.button className="tilt-surface" key={game.id} onMouseMove={tilt} onMouseLeave={untilt} onClick={()=>setSelected(game)} style={{'--spot':game.accent} as React.CSSProperties}><GameCover game={game}/><div className="spotlight-shade"/><span>0{index+1}</span><div><small>{index===2?'MOST ANTICIPATED':'ALL-TIME FAVORITE'}</small><h3>{game.title}</h3><p>{game.description}</p><strong>EXPLORE ENTRY <Play size={11} fill="currentColor"/></strong></div></motion.button>)}</div></section></>}
 
