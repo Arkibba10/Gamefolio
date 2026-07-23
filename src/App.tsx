@@ -69,7 +69,7 @@ const nav = [
 ]
 
 const pageCopy: Record<string, { kicker: string; title: string; text: string }> = {
-  Home: { kicker: 'WELCOME BACK, ARKIVE', title: 'Your worlds. Your stories.', text: 'A living museum of every adventure that left a mark.' },
+  Home: { kicker: 'WELCOME', title: 'My worlds. My stories.', text: 'A living museum of every adventure that left a mark.' },
   'All games': { kicker: 'THE COMPLETE VAULT', title: 'Every world explored', text: 'From Raccoon City to Tsushima—your entire gaming history, in one place.' },
   Favorites: { kicker: 'HALL OF LEGENDS', title: 'The unforgettable ones', text: 'Games that did more than entertain. These worlds stayed with you.' },
   Wishlist: { kicker: 'ON THE HORIZON', title: 'Adventures calling', text: 'The games and worlds waiting for your next chapter.' },
