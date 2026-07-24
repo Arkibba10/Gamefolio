@@ -139,9 +139,14 @@ function App() {
   const [muted, setMuted] = useState(true)
   const audioRef = useRef<HTMLAudioElement>(null)
 
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = 0.3
+  }, [])
+
   const toggleMusic = () => {
     const audio = audioRef.current
     if (!audio) return
+    audio.volume = 0.3
     if (muted) {
       audio.muted = false
       audio.play().catch(() => {})
